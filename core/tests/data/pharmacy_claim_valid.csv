@@ -1,0 +1,3 @@
+claim_id,ncpdp_id,bin_number,service_date,total_amount_paid,transaction_code
+CLM001,NCP001,BIN001,2025-01-01,150.00,TXN001
+CLM002,NCP002,BIN002,2025-01-02,200.50,TXN002

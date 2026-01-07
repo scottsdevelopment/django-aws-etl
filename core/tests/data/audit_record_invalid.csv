@@ -1,0 +1,4 @@
+provider_npi,billing_amount,service_date,status
+12345,123.45,2023-01-15,invalid_npi
+1234567890,-50.00,2023-01-16,negative_amount
+INVALID_NPI,100.00,2023-01-17,bad_format

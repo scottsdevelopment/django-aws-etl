@@ -1,0 +1,3 @@
+provider_npi,billing_amount,service_date,status
+1234567890,123.45,2023-01-15,processed
+9876543210,67.89,2023-01-16,submitted

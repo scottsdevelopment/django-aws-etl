@@ -1,0 +1,12 @@
+django>=5.0
+django-environ
+celery
+boto3
+psycopg2-binary
+pytest
+pytest-django
+pytest-cov
+localstack-client
+pycurl
+pydantic
+ruff
