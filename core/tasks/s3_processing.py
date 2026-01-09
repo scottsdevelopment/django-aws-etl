@@ -31,7 +31,7 @@ def process_s3_file(self: Any, bucket_name: str, object_key: str) -> dict[str, A
     
     s3_client = boto3.client(
         's3',
-        endpoint_url=settings.AWS_ENDPOINT_URL.replace('localhost', 'localstack'),
+        endpoint_url=settings.AWS_ENDPOINT_URL,
         aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
         aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
         region_name=settings.AWS_DEFAULT_REGION
