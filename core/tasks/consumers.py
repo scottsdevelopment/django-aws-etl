@@ -27,7 +27,7 @@ class S3EventConsumer(bootsteps.StartStopStep):
     def start(self, worker: Any):
         self.enabled = True
         # Lazy initialization
-        endpoint_url = settings.AWS_ENDPOINT_URL.replace('localhost', 'localstack')
+        endpoint_url = settings.AWS_ENDPOINT_URL
         self.sqs = boto3.client(
             'sqs',
             endpoint_url=endpoint_url,
