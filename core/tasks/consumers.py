@@ -3,6 +3,7 @@ import logging
 import threading
 import time
 from typing import Any
+from urllib.parse import unquote_plus
 
 import boto3
 from celery import bootsteps, current_app
@@ -88,7 +89,7 @@ class S3EventConsumer(bootsteps.StartStopStep):
         Extracts S3 details and dispatches the Celery task.
         """
         bucket = record['s3']['bucket']['name']
-        key = record['s3']['object']['key']
+        key = unquote_plus(record['s3']['object']['key'])
         
         logger.info(f"S3EventConsumer: Dispatching task 'process_s3_file' for s3://{bucket}/{key}")
         

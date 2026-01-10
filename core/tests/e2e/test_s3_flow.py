@@ -12,7 +12,7 @@ import boto3
 import pytest
 from django.conf import settings
 
-from core.models import AuditRecord, PharmacyClaim
+from core.models import Artifact, AuditRecord, PharmacyClaim
 from core.tests.utils import ensure_bucket
 
 logger = logging.getLogger(__name__)
@@ -94,10 +94,16 @@ def test_ingestion_flow(s3_client, case):
                 break
             time.sleep(1)
             
-        assert records_found, (
-            f"Timeout waiting for {case['expected_count']} records to appear in {case['model'].__name__}. "
-            f"Found {case['model'].objects.count()}"
-        )
+        if not records_found:
+            # Debug: Check if Artifact exists and its status
+            artifacts = Artifact.objects.filter(file=case["key"])
+            debug_info = f"Artifacts found for {case['key']}: {list(artifacts.values('id', 'status', 'created_at'))}"
+            
+            assert records_found, (
+                f"Timeout waiting for {case['expected_count']} records to appear in {case['model'].__name__}. "
+                f"Found {case['model'].objects.count()}. "
+                f"{debug_info}"
+            )
         
         assert case["model"].objects.count() == case["expected_count"]
         

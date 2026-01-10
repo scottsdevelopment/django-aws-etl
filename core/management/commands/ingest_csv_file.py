@@ -1,8 +1,11 @@
+import os
 from typing import Any
 
+from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand
 
-from core.services.ingestion import ingest_csv_data
+from core.services.processing_service import process_artifact
+from core.services.raw_ingestion_service import ingest_file_to_raw
 from core.strategies import get_strategy
 
 
@@ -30,12 +33,28 @@ class Command(BaseCommand):
         self.stdout.write(f"Starting ingestion of {data_type} from {csv_file_path}...")
 
         try:
-            with open(csv_file_path, encoding='utf-8') as file_obj:
-                success_count, failure_count = ingest_csv_data(file_obj, strategy)
+            # Check file exists first
+            if not os.path.exists(csv_file_path):
+                 self.stdout.write(self.style.ERROR(f"File not found: {csv_file_path}"))
+                 return
+
+            with open(csv_file_path, 'rb') as f:
+                content = f.read()
+                
+            filename = os.path.basename(csv_file_path)
+            file_obj = ContentFile(content, name=filename)
+            
+            # 1. Ingest to Raw
+            # For local files, we treat the filename as the s3_key for tracking
+            artifact = ingest_file_to_raw(file_obj, filename, data_type)
+            
+            if artifact.status == 'FAILED':
+                self.stdout.write(self.style.ERROR("Raw ingestion failed. Check logs."))
+                return
+
+            # 2. Process Artifact/Raw rows
+            success_count, failure_count = process_artifact(artifact.id)
         
-        except FileNotFoundError:
-            self.stdout.write(self.style.ERROR(f"File not found: {csv_file_path}"))
-            return
         except OSError as os_err:
              self.stdout.write(self.style.ERROR(f"Error opening/reading file: {str(os_err)}"))
              return
@@ -44,5 +63,3 @@ class Command(BaseCommand):
              return
 
         self.stdout.write(self.style.SUCCESS(f"Ingestion complete. Success: {success_count}, Failed: {failure_count}"))
-
-
