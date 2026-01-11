@@ -96,11 +96,12 @@ def test_process_artifact_runtime_exception():
     artifact = Artifact.objects.create(file="crash.csv", content_type="pharmacy", status="COMPLETED")
     RawData.objects.create(artifact=artifact, row_index=1, data={"some": "data"}, status="PENDING")
 
-    # Patch get_strategy inside processing_service
+    # Patch StrategyFactory inside processing_service
     mock_strategy = MagicMock()
     mock_strategy.schema_class.model_validate.side_effect = Exception("Runtime Boom")
 
-    with patch("core.services.processing_service.get_strategy", return_value=mock_strategy):
+    with patch("core.services.processing_service.StrategyFactory") as mock_factory:
+        mock_factory.get_strategy.return_value = mock_strategy
         success, failed = process_artifact(artifact.id)
 
     assert success == 0

@@ -30,3 +30,10 @@ class StrategyFactory:
         """
         content_type = cls.get_content_type(object_key)
         return get_strategy(content_type)
+
+    @classmethod
+    def get_strategy(cls, type_name: str):
+        """
+        Directly retrieves a strategy instance by name.
+        """
+        return get_strategy(type_name)

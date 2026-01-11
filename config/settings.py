@@ -111,7 +111,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Celery
 CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="sqs://test:test@localhost:4566/0")
-CELERY_Result_BACKEND = None
+CELERY_RESULT_BACKEND = None
 CELERY_TASK_DEFAULT_QUEUE = "healthcare-ingestion-queue"
 CELERY_BROKER_TRANSPORT_OPTIONS = {
     "region": "us-east-1",

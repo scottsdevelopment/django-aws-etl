@@ -3,8 +3,8 @@ import logging
 from pydantic import ValidationError as PydanticValidationError
 
 from core.models import Artifact, RawData
-from core.strategies import get_strategy
 from core.strategies.base import IngestionStrategy
+from core.strategies.factory import StrategyFactory
 
 logger = logging.getLogger(__name__)
 
@@ -23,10 +23,7 @@ def process_artifact(artifact_id: int) -> tuple[int, int]:
 
     try:
         # Use factory to get strategy (router + registry lookup)
-        # Note: We can use get_strategy directly if content_type implies it,
-        # but factory.get_strategy_by_key is for Key -> Strategy.
-        # Here we have content_type.
-        strategy = get_strategy(artifact.content_type)
+        strategy = StrategyFactory.get_strategy(artifact.content_type)
         if not strategy:
             raise ValueError(f"Strategy not found for content_type: {artifact.content_type}")
     except ValueError as e:
