@@ -1,6 +1,6 @@
 import logging
 
-from core.strategies.base import STRATEGY_REGISTRY, get_strategy
+from core.strategies.base import STRATEGY_REGISTRY, IngestionStrategy, get_strategy
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ class StrategyFactory:
         raise ValueError(f"No content type mapping found for key: {object_key}")
 
     @classmethod
-    def get_strategy_by_key(cls, object_key: str):
+    def get_strategy_by_key(cls, object_key: str) -> IngestionStrategy | None:
         """
         Determines and returns the appropriate strategy instance for a given key.
         """
@@ -32,7 +32,7 @@ class StrategyFactory:
         return get_strategy(content_type)
 
     @classmethod
-    def get_strategy(cls, type_name: str):
+    def get_strategy(cls, type_name: str) -> IngestionStrategy | None:
         """
         Directly retrieves a strategy instance by name.
         """
