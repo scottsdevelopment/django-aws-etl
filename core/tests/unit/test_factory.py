@@ -1,6 +1,7 @@
 import pytest
 
 from core.strategies.factory import StrategyFactory
+from core.strategies.pharmacy_claim import PharmacyClaimStrategy
 
 
 @pytest.mark.parametrize("key, expected_type", [
@@ -26,7 +27,6 @@ def test_root_file_routing():
 
 def test_get_strategy_by_key():
     """Test full resolution from key to strategy instance."""
-    from core.strategies.pharmacy_claim import PharmacyClaimStrategy
     
     strategy = StrategyFactory.get_strategy_by_key("pharmacy/claim.csv")
     assert isinstance(strategy, PharmacyClaimStrategy)

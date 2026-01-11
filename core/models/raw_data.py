@@ -8,10 +8,14 @@ class RawData(models.Model):
     Represents a single raw row of data from an ingested artifact.
     """
 
+    PENDING = "PENDING"
+    PROCESSED = "PROCESSED"
+    FAILED = "FAILED"
+
     STATUS_CHOICES = [
-        ("PENDING", "Pending"),
-        ("PROCESSED", "Processed"),
-        ("FAILED", "Failed"),
+        (PENDING, "Pending"),
+        (PROCESSED, "Processed"),
+        (FAILED, "Failed"),
     ]
 
     artifact = models.ForeignKey(
@@ -25,7 +29,7 @@ class RawData(models.Model):
     )
     row_index = models.IntegerField()
     status = models.CharField(
-        max_length=20, choices=STATUS_CHOICES, default="PENDING"
+        max_length=20, choices=STATUS_CHOICES, default=PENDING
     )
     error_message = models.TextField(null=True, blank=True)
 

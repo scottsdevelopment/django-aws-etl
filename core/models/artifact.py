@@ -6,11 +6,16 @@ class Artifact(models.Model):
     Represents an ingested file artifact.
     """
 
+    PENDING = "PENDING"
+    PROCESSING = "PROCESSING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+
     STATUS_CHOICES = [
-        ("PENDING", "Pending"),
-        ("PROCESSING", "Processing"),
-        ("COMPLETED", "Completed"),
-        ("FAILED", "Failed"),
+        (PENDING, "Pending"),
+        (PROCESSING, "Processing"),
+        (COMPLETED, "Completed"),
+        (FAILED, "Failed"),
     ]
 
     file = models.CharField(max_length=1024, help_text="S3 URI or Key")
@@ -18,7 +23,7 @@ class Artifact(models.Model):
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
-        default='PENDING'
+        default=PENDING
     )
     created_at = models.DateTimeField(auto_now_add=True)
 

@@ -21,7 +21,7 @@ def ingest_file_to_raw(file_obj: TextIO, file_name: str, content_type: str) -> A
         # We use the 'file' field to store the S3 Key/URI
         file=file_name,
         content_type=content_type,
-        status="PROCESSING",
+        status=Artifact.PROCESSING,
     )
 
     try:
@@ -42,7 +42,7 @@ def ingest_file_to_raw(file_obj: TextIO, file_name: str, content_type: str) -> A
 
         if not reader.fieldnames:
             logger.error(f"CSV {file_name} is empty or missing headers")
-            artifact.status = "FAILED"
+            artifact.status = Artifact.FAILED
             artifact.save()
             return artifact
 
@@ -57,7 +57,7 @@ def ingest_file_to_raw(file_obj: TextIO, file_name: str, content_type: str) -> A
                     artifact=artifact,
                     row_index=i,
                     data=cleaned_row,
-                    status="PENDING",
+                    status=RawData.PENDING,
                 )
             )
 
@@ -69,13 +69,13 @@ def ingest_file_to_raw(file_obj: TextIO, file_name: str, content_type: str) -> A
         if raw_rows:
             RawData.objects.bulk_create(raw_rows)
 
-        artifact.status = "COMPLETED"
+        artifact.status = Artifact.COMPLETED
         artifact.save()
         logger.info(f"Successfully ingested artifact {artifact.id} with {i} rows")
 
     except Exception as e:
-        logger.error(f"Failed to ingest artifact {s3_key}: {str(e)}")
-        artifact.status = "FAILED"
+        logger.error(f"Failed to ingest artifact {file_name}: {str(e)}")
+        artifact.status = Artifact.FAILED
         artifact.save()
 
     return artifact

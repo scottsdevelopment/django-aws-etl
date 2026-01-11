@@ -4,6 +4,7 @@ from typing import Any
 from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand
 
+from core.models import Artifact
 from core.services.processing_service import process_artifact
 from core.services.raw_ingestion_service import ingest_file_to_raw
 from core.strategies import get_strategy
@@ -45,10 +46,9 @@ class Command(BaseCommand):
             file_obj = ContentFile(content, name=filename)
             
             # 1. Ingest to Raw
-            # For local files, we treat the filename as the s3_key for tracking
             artifact = ingest_file_to_raw(file_obj, filename, data_type)
             
-            if artifact.status == 'FAILED':
+            if artifact.status == Artifact.FAILED:
                 self.stdout.write(self.style.ERROR("Raw ingestion failed. Check logs."))
                 return
 

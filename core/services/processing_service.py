@@ -34,7 +34,7 @@ def process_artifact(artifact_id: int) -> tuple[int, int]:
         return None
 
     # Process pending rows
-    pending_rows = RawData.objects.filter(artifact=artifact, status="PENDING")
+    pending_rows = RawData.objects.filter(artifact=artifact, status=RawData.PENDING)
     
     success_count = 0
     failure_count = 0
@@ -63,8 +63,7 @@ def _process_single_raw_row(raw_row: RawData, strategy: IngestionStrategy) -> bo
             schema_data = strategy.schema_class.model_validate(row_data)
         except PydanticValidationError as e:
             msg = f"Validation Failed: {e}"
-            _log_raw_error(raw_row, msg)
-            raw_row.status = "FAILED"
+            raw_row.status = RawData.FAILED
             raw_row.error_message = msg
             raw_row.save()
             return False
@@ -80,17 +79,14 @@ def _process_single_raw_row(raw_row: RawData, strategy: IngestionStrategy) -> bo
 
         strategy.model_class.objects.update_or_create(defaults=defaults, **lookup_kwargs)
 
-        raw_row.status = "PROCESSED"
+        raw_row.status = RawData.PROCESSED
         raw_row.save()
         return True
 
     except Exception as e:
-        _log_raw_error(raw_row, f"Runtime Error: {str(e)}")
-        raw_row.status = "FAILED"
+        raw_row.status = RawData.FAILED
         raw_row.error_message = str(e)
         raw_row.save()
         return False
 
 
-def _log_raw_error(raw_row: RawData, reason: str):
-    pass
