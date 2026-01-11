@@ -1,9 +1,12 @@
-import pytest
-from decimal import Decimal
 from datetime import datetime, timezone
-from core.strategies.lab_result import LabResultStrategy
-from core.schemas.lab_result import LabResultSchema
+from decimal import Decimal
+
+import pytest
+
 from core.models.lab_result import LabResult
+from core.schemas.lab_result import LabResultSchema
+from core.strategies.lab_result import LabResultStrategy
+
 
 @pytest.mark.django_db
 class TestLabResultStrategy:

@@ -8,5 +8,6 @@ __all__ = [
     "AuditRecord",
     "PharmacyClaim",
     "Artifact",
+    "LabResult",
     "RawData",
 ]

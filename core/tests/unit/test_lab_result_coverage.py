@@ -1,12 +1,14 @@
 
-import pytest
-from datetime import datetime, date, timezone
+from datetime import datetime, timezone
 from decimal import Decimal
+
+import pytest
 from pydantic import ValidationError
 
 from core.models.lab_result import LabResult
 from core.schemas.lab_result import LabResultSchema
 from core.strategies.lab_result import LabResultStrategy
+
 
 @pytest.mark.django_db
 def test_lab_result_str():
