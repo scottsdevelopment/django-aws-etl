@@ -6,6 +6,7 @@ from celery import shared_task
 from django.conf import settings
 from django.core.files.base import ContentFile
 
+from core.models import Artifact
 from core.services.raw_ingestion_service import ingest_file_to_raw
 from core.strategies.factory import StrategyFactory
 from core.tasks.artifact_processing import process_artifact_task
@@ -45,7 +46,7 @@ def process_s3_file(self: Any, bucket_name: str, object_key: str) -> dict[str, A
         # 1. Ingest to Raw
         artifact = ingest_file_to_raw(file_obj, object_key, content_type)
 
-        if artifact.status == "FAILED":
+        if artifact.status == Artifact.FAILED:
             return {"success": 0, "failed": 1, "error": "Raw ingestion failed"}
 
         # 2. Trigger Artifact Processing
