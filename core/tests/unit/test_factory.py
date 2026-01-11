@@ -1,5 +1,6 @@
 import pytest
 
+from core.strategies.base import IngestionStrategy
 from core.strategies.factory import StrategyFactory
 from core.strategies.pharmacy_claim import PharmacyClaimStrategy
 
@@ -36,3 +37,8 @@ def test_get_strategy_by_key():
 
     strategy = StrategyFactory.get_strategy_by_key("pharmacy/claim.csv")
     assert isinstance(strategy, PharmacyClaimStrategy)
+
+
+def test_base_strategy_defaults():
+    """Test base IngestionStrategy defaults."""
+    assert IngestionStrategy.can_handle("any/key") is False

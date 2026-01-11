@@ -22,7 +22,7 @@ graph LR
 
 ## 🚀 Features
 
-*   **Ingestion Strategies**: Pluggable strategies for different data types (Pharmacy Claims, Audit Records), managed via a Factory pattern.
+*   **Ingestion Strategies**: Pluggable strategies for different data types (Pharmacy Claims, Audit Records), managed via a **Dynamic Registry** with auto-discovery.
 *   **Infrastructure as Code**: Terraform manages all AWS resources (Buckets, Queues, Policies).
 *   **Local Development**: Fully local environment using LocalStack to mock AWS services.
 *   **Reliability**: Dead Letter Queues (DLQ) and robust error handling (implemented in Celery tasks).
