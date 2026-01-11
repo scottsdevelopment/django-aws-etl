@@ -20,11 +20,7 @@ class Artifact(models.Model):
 
     file = models.CharField(max_length=1024, help_text="S3 URI or Key")
     content_type = models.CharField(max_length=50)
-    status = models.CharField(
-        max_length=20,
-        choices=STATUS_CHOICES,
-        default=PENDING
-    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=PENDING)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

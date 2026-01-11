@@ -15,7 +15,7 @@ def ingest_file_to_raw(file_obj: TextIO, file_name: str, content_type: str) -> A
     Step 1: Ingests a CSV file into RawData models grouped by an Artifact.
     Table structure is preserved 1:1 in the 'data' JSONField.
     """
-    # Note: We now store s3_key instead of file. 
+    # Note: We now store s3_key instead of file.
     # file_obj is passed in just for reading parsing, not saving to the model.
     artifact = Artifact.objects.create(
         # We use the 'file' field to store the S3 Key/URI
@@ -26,18 +26,14 @@ def ingest_file_to_raw(file_obj: TextIO, file_name: str, content_type: str) -> A
 
     try:
         # Reset pointer just in case
-        if hasattr(file_obj, 'seek'):
+        if hasattr(file_obj, "seek"):
             file_obj.seek(0)
             content = file_obj.read()
         else:
             content = file_obj
-        
-        decoded_file = (
-            content.decode("utf-8-sig").splitlines()
-            if isinstance(content, bytes)
-            else content.splitlines()
-        )
-            
+
+        decoded_file = content.decode("utf-8-sig").splitlines() if isinstance(content, bytes) else content.splitlines()
+
         reader = csv.DictReader(decoded_file)
 
         if not reader.fieldnames:
@@ -49,9 +45,7 @@ def ingest_file_to_raw(file_obj: TextIO, file_name: str, content_type: str) -> A
         raw_rows = []
         for i, row in enumerate(reader, start=1):
             # Clean keys/values
-            cleaned_row = {
-                k.strip(): v.strip() for k, v in row.items() if k and k.strip()
-            }
+            cleaned_row = {k.strip(): v.strip() for k, v in row.items() if k and k.strip()}
             raw_rows.append(
                 RawData(
                     artifact=artifact,

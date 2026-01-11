@@ -8,6 +8,7 @@ class PharmacyClaimStrategy(IngestionStrategy):
     """
     Strategy for ingesting PharmacyClaim data.
     """
+
     model_class = PharmacyClaim
     schema_class = PharmacyClaimSchema
-    unique_fields = ['claim_id']
+    unique_fields = ["claim_id"]

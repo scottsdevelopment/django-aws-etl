@@ -18,19 +18,11 @@ class RawData(models.Model):
         (FAILED, "Failed"),
     ]
 
-    artifact = models.ForeignKey(
-        Artifact, on_delete=models.CASCADE, related_name="raw_rows"
-    )
-    data = models.JSONField(
-        help_text="The raw data row as a dictionary", null=True, blank=True
-    )
-    raw_content = models.TextField(
-        null=True, blank=True, help_text="Fallback for malformed rows"
-    )
+    artifact = models.ForeignKey(Artifact, on_delete=models.CASCADE, related_name="raw_rows")
+    data = models.JSONField(help_text="The raw data row as a dictionary", null=True, blank=True)
+    raw_content = models.TextField(null=True, blank=True, help_text="Fallback for malformed rows")
     row_index = models.IntegerField()
-    status = models.CharField(
-        max_length=20, choices=STATUS_CHOICES, default=PENDING
-    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=PENDING)
     error_message = models.TextField(null=True, blank=True)
 
     class Meta:

@@ -8,6 +8,7 @@ class AuditRecordStrategy(IngestionStrategy):
     """
     Strategy for ingesting AuditRecord data.
     """
+
     model_class = AuditRecord
     schema_class = AuditRecordSchema
-    unique_fields = ['provider_npi', 'service_date', 'billing_amount']
+    unique_fields = ["provider_npi", "service_date", "billing_amount"]

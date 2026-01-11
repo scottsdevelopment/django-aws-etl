@@ -13,7 +13,7 @@ from core.tasks.artifact_processing import process_artifact_task
 logger = logging.getLogger(__name__)
 
 
-@shared_task(name='process_s3_file', bind=True, max_retries=3)
+@shared_task(name="process_s3_file", bind=True, max_retries=3)
 def process_s3_file(self: Any, bucket_name: str, object_key: str) -> dict[str, Any]:
     """
     Step 1: Downloads a CSV file from S3 and ingests it into RawData.
@@ -24,36 +24,33 @@ def process_s3_file(self: Any, bucket_name: str, object_key: str) -> dict[str, A
     except ValueError as e:
         logger.error(f"Skipping processing: {str(e)}")
         return {"success": 0, "failed": 0, "error": str(e)}
-    
-    logger.info(
-        f"Processing file from S3: bucket={bucket_name}, key={object_key}, "
-        f"content_type={content_type}"
-    )
-    
+
+    logger.info(f"Processing file from S3: bucket={bucket_name}, key={object_key}, content_type={content_type}")
+
     s3_client = boto3.client(
-        's3',
+        "s3",
         endpoint_url=settings.AWS_ENDPOINT_URL,
         aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
         aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-        region_name=settings.AWS_DEFAULT_REGION
+        region_name=settings.AWS_DEFAULT_REGION,
     )
 
     try:
         response = s3_client.get_object(Bucket=bucket_name, Key=object_key)
-        file_content = response['Body'].read() # bytes
-        
+        file_content = response["Body"].read()  # bytes
+
         # Create a Django ContentFile
         file_obj = ContentFile(file_content, name=object_key)
-        
+
         # 1. Ingest to Raw
         artifact = ingest_file_to_raw(file_obj, object_key, content_type)
-        
-        if artifact.status == 'FAILED':
-             return {"success": 0, "failed": 1, "error": "Raw ingestion failed"}
+
+        if artifact.status == "FAILED":
+            return {"success": 0, "failed": 1, "error": "Raw ingestion failed"}
 
         # 2. Trigger Artifact Processing
         process_artifact_task.delay(artifact.id)
-        
+
         return {"success": 1, "failed": 0, "artifact_id": artifact.id}
 
     except Exception as e:

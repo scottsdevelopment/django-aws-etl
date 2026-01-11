@@ -4,8 +4,8 @@ from .pharmacy_claim import PharmacyClaim
 from .raw_data import RawData
 
 __all__ = [
-    'AuditRecord',
-    'PharmacyClaim',
-    'Artifact',
-    'RawData',
+    "AuditRecord",
+    "PharmacyClaim",
+    "Artifact",
+    "RawData",
 ]

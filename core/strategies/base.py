@@ -8,6 +8,7 @@ class IngestionStrategy:
     """
     Abstract base class defining the contract for data ingestion.
     """
+
     model_class: type[models.Model]
     schema_class: type[BaseModel]
     unique_fields: list[str]

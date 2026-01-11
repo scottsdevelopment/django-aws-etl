@@ -23,19 +23,19 @@ def process_artifact(artifact_id: int) -> tuple[int, int]:
 
     try:
         # Use factory to get strategy (router + registry lookup)
-        # Note: We can use get_strategy directly if content_type implies it, 
+        # Note: We can use get_strategy directly if content_type implies it,
         # but factory.get_strategy_by_key is for Key -> Strategy.
         # Here we have content_type.
         strategy = get_strategy(artifact.content_type)
         if not strategy:
-             raise ValueError(f"Strategy not found for content_type: {artifact.content_type}")
+            raise ValueError(f"Strategy not found for content_type: {artifact.content_type}")
     except ValueError as e:
         logger.error(str(e))
         return None
 
     # Process pending rows
     pending_rows = RawData.objects.filter(artifact=artifact, status=RawData.PENDING)
-    
+
     success_count = 0
     failure_count = 0
 
@@ -45,9 +45,7 @@ def process_artifact(artifact_id: int) -> tuple[int, int]:
         else:
             failure_count += 1
 
-    logger.info(
-        f"Artifact {artifact.id} processed: {success_count} success, {failure_count} failures"
-    )
+    logger.info(f"Artifact {artifact.id} processed: {success_count} success, {failure_count} failures")
     return success_count, failure_count
 
 
@@ -56,7 +54,7 @@ def _process_single_raw_row(raw_row: RawData, strategy: IngestionStrategy) -> bo
     Processes a single RawData row.
     """
     row_data = raw_row.data
-    
+
     try:
         # 1. Validation Layer
         try:
@@ -73,9 +71,7 @@ def _process_single_raw_row(raw_row: RawData, strategy: IngestionStrategy) -> bo
 
         # 3. Idempotent Loading
         lookup_kwargs = {k: django_data[k] for k in strategy.unique_fields}
-        defaults = {
-            k: v for k, v in django_data.items() if k not in strategy.unique_fields
-        }
+        defaults = {k: v for k, v in django_data.items() if k not in strategy.unique_fields}
 
         strategy.model_class.objects.update_or_create(defaults=defaults, **lookup_kwargs)
 
@@ -88,5 +84,3 @@ def _process_single_raw_row(raw_row: RawData, strategy: IngestionStrategy) -> bo
         raw_row.error_message = str(e)
         raw_row.save()
         return False
-
-
