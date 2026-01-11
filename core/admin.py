@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from core.models import Artifact, AuditRecord, PharmacyClaim, RawData
+from core.models import Artifact, AuditRecord, LabResult, PharmacyClaim, RawData
 
 
 @admin.register(AuditRecord)
@@ -11,6 +11,11 @@ class AuditRecordAdmin(admin.ModelAdmin):
 @admin.register(PharmacyClaim)
 class PharmacyClaimAdmin(admin.ModelAdmin):
     list_display = ("claim_id", "service_date", "total_amount_paid")
+
+
+@admin.register(LabResult)
+class LabResultAdmin(admin.ModelAdmin):
+    list_display = ("patient_id", "test_code", "test_name", "result_value", "result_unit", "performed_at")
 
 
 @admin.register(Artifact)

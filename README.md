@@ -1,6 +1,6 @@
 # Django AWS ETL
 
-A robust, event-driven ETL (Extract, Transform, Load) pipeline built with Django, Celery, and AWS services (simulated locally via LocalStack). This project demonstrates a scalable architecture for ingesting healthcare data (e.g., Pharmacy Claims, Audit Records) using S3 event notifications and SQS queues.
+A robust, event-driven ETL (Extract, Transform, Load) pipeline built with Django, Celery, and AWS services (simulated locally via LocalStack). This project demonstrates a scalable architecture for ingesting healthcare data (e.g., Pharmacy Claims, Audit Records, Lab Results) using S3 event notifications and SQS queues.
 
 ## 🏗 Architecture
 
@@ -107,6 +107,13 @@ To see a formatted report of coverage gaps:
 ```bash
 docker-compose exec web sh -c "pytest --cov=core --cov-report term-missing | python scripts/coverage_report.py"
 ```
+
+### Testing Strategy
+
+> [!NOTE]
+> **Pragmatic E2E Testing**: End-to-End (E2E) tests in this project are designed to be **stateful**. They verify infrastructure parity (S3 -> Celery -> Postgres) by committing real transactions to the test database. Automatic cleanup (rollback) is intentionally omitted or relaxed to allow for:
+> 1.  **Visual Inspection**: Developers can view created Artifacts and Domain Records in the Django Admin after a test run.
+> 2.  **Infrastructure Proof**: Ensuring that the full commit-path works, including database constraints and transaction handling.
 
 ## ☁️ Infrastructure Resources (Terraform)
 

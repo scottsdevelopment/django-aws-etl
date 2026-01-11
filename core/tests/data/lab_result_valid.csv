@@ -1,0 +1,4 @@
+patient_id,test_code,test_name,result_value,result_unit,reference_range,performed_at
+P001,L001,Glucose,95.5,mg/dL,70-100,2024-01-01T10:00:00Z
+P002,L001,Glucose,5.55,mmol/L,70-100,2024-01-02T09:30:00Z
+P003,L001,Glucose,120.0,mg/dL,70-100,2024-01-01T10:00:00Z
