@@ -1,35 +1,39 @@
 import logging
 
-from core.strategies import IngestionStrategy, get_strategy
+from core.strategies.base import STRATEGY_REGISTRY, IngestionStrategy, get_strategy
 
 logger = logging.getLogger(__name__)
 
 
 class StrategyFactory:
     """
-    Determines the appropriate IngestionStrategy based on S3 object key prefixes.
-    Implements 'Option A: Prefix/Suffix Routing'.
+    Determines the appropriate IngestionStrategy based on object key.
+    Uses 'Dynamic Discovery' via the Registry.
     """
-    
-    PREFIX_MAP = {
-        'audit/': 'audit',
-        'pharmacy/': 'pharmacy',
-    }
 
     @classmethod
-    def get_strategy_by_key(cls, object_key: str) -> IngestionStrategy:
+    def get_content_type(cls, object_key: str) -> str:
         """
-        Parses the object key to find a matching prefix and returns the corresponding strategy.
-        Raises ValueError if no matching prefix is found.
+        Returns the content_type (strategy name) for a given object key.
+        Iterates through registered strategies to find one that can handle the key.
         """
-        for prefix, strategy_name in cls.PREFIX_MAP.items():
-            if object_key.startswith(prefix):
-                logger.info(f"Routing '{object_key}' to strategy '{strategy_name}' via prefix '{prefix}'")
-                return get_strategy(strategy_name)
-        
-        error_msg = (
-            f"No ingestion strategy found for key: {object_key}. "
-            f"Supported prefixes: {list(cls.PREFIX_MAP.keys())}"
-        )
-        logger.error(error_msg)
-        raise ValueError(error_msg)
+        for name, strategy_cls in STRATEGY_REGISTRY.items():
+            if strategy_cls.can_handle(object_key):
+                return name
+
+        raise ValueError(f"No content type mapping found for key: {object_key}")
+
+    @classmethod
+    def get_strategy_by_key(cls, object_key: str) -> IngestionStrategy | None:
+        """
+        Determines and returns the appropriate strategy instance for a given key.
+        """
+        content_type = cls.get_content_type(object_key)
+        return get_strategy(content_type)
+
+    @classmethod
+    def get_strategy(cls, type_name: str) -> IngestionStrategy | None:
+        """
+        Directly retrieves a strategy instance by name.
+        """
+        return get_strategy(type_name)

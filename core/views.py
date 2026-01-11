@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from django.http import HttpRequest
 
 
-def health_check(request: 'HttpRequest') -> JsonResponse:
+def health_check(request: "HttpRequest") -> JsonResponse:
     """
     Health check endpoint returning status of Database and Celery.
     """
@@ -29,13 +29,13 @@ def health_check(request: 'HttpRequest') -> JsonResponse:
     except Exception as e:
         celery_status = f"error: {str(e)}"
 
-    is_healthy = (db_status == "ok" and celery_status == "ok")
+    is_healthy = db_status == "ok" and celery_status == "ok"
     status_code = http.HTTPStatus.OK if is_healthy else http.HTTPStatus.SERVICE_UNAVAILABLE
 
-    return JsonResponse({
-        "status": "healthy" if is_healthy else "unhealthy",
-        "components": {
-            "database": db_status,
-            "celery": celery_status
-        }
-    }, status=status_code)
+    return JsonResponse(
+        {
+            "status": "healthy" if is_healthy else "unhealthy",
+            "components": {"database": db_status, "celery": celery_status},
+        },
+        status=status_code,
+    )

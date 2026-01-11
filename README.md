@@ -4,7 +4,7 @@ A robust, event-driven ETL (Extract, Transform, Load) pipeline built with Django
 
 ## 🏗 Architecture
 
-The system follows a modern event-driven design:
+The system follows a modern event-driven design (see [Status Workflow](docs/status_workflow.md)):
 
 1.  **Upload**: Files (CSV) are uploaded to an S3 Bucket (`healthcare-ingestion-drop-zone`).
 2.  **Notification**: S3 publishes a creation event to an SQS Queue (`s3-event-queue`).
@@ -22,11 +22,11 @@ graph LR
 
 ## 🚀 Features
 
-*   **Ingestion Strategies**: Pluggable strategies for different data types (Pharmacy Claims, Audit Records), managed via a Factory pattern.
+*   **Ingestion Strategies**: Pluggable strategies for different data types (Pharmacy Claims, Audit Records), managed via a **Dynamic Registry** with auto-discovery.
 *   **Infrastructure as Code**: Terraform manages all AWS resources (Buckets, Queues, Policies).
 *   **Local Development**: Fully local environment using LocalStack to mock AWS services.
 *   **Reliability**: Dead Letter Queues (DLQ) and robust error handling (implemented in Celery tasks).
-*   **Code Quality**: Enforced via `ruff` and `pytest`.
+*   **Code Quality**: Enforced via `ruff` and `pytest`. Strict "No NOQA" policy; all linting errors must be resolved by refactoring (e.g., using constants, proper imports) rather than suppression.
 
 ## 🛠 Prerequisites
 
@@ -76,18 +76,36 @@ django-aws-etl/
 
 ### Running Tests
 
-To run the test suite within the Docker container:
+## Validation Commands
+
+Run the full verification suite (Linting + Tests + Coverage):
 
 ```bash
-docker-compose exec web pytest
+# 1. Linting (Ruff)
+docker-compose exec web ruff check .
+
+# 2. Integration Tests
+docker-compose exec web pytest core/tests/integration/
+
+# 3. Full Coverage
+docker-compose exec web pytest --cov=core
 ```
 
-### Linting
+### Coverage Goals
+The project maintains **100% test coverage**. Any new features must include comprehensive tests.
 
-Code style is enforced using `ruff`.
+### Coverage
+
+To run test coverage locally:
 
 ```bash
-docker-compose exec web ruff check .
+python -m pytest --cov=core
+```
+
+To see a formatted report of coverage gaps:
+
+```bash
+docker-compose exec web sh -c "pytest --cov=core --cov-report term-missing | python scripts/coverage_report.py"
 ```
 
 ## ☁️ Infrastructure Resources (Terraform)

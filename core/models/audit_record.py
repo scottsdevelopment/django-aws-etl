@@ -12,11 +12,10 @@ class AuditRecord(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=['provider_npi', 'service_date', 'billing_amount'],
-                name='unique_audit_record'
+                fields=["provider_npi", "service_date", "billing_amount"], name="unique_audit_record"
             )
         ]
-        app_label = 'core'
+        app_label = "core"
 
     def __str__(self):
         return f"{self.provider_npi} - {self.service_date} - {self.status}"

@@ -11,15 +11,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.CreateModel(
-            name='IngestionError',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('raw_data', models.JSONField()),
-                ('error_reason', models.TextField()),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-            ],
-        ),
+
         migrations.CreateModel(
             name='PharmacyClaim',
             fields=[
