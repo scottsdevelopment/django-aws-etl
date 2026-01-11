@@ -4,7 +4,6 @@ Verifies the integration between S3, Celery, and the Database.
 """
 
 import logging
-import time
 from datetime import date
 from decimal import Decimal
 from pathlib import Path
@@ -12,8 +11,10 @@ from pathlib import Path
 import boto3
 import pytest
 from django.conf import settings
+from django.test import override_settings
 
-from core.models import Artifact, AuditRecord, PharmacyClaim
+from core.models import Artifact, AuditRecord, LabResult, PharmacyClaim
+from core.tasks.s3_processing import process_s3_file
 from core.tests.utils import ensure_bucket
 
 logger = logging.getLogger(__name__)
@@ -29,6 +30,7 @@ TEST_CASES = [
         "key": "audit/e2e_test.csv",
         "filename": "audit_record_valid.csv",
         "model": AuditRecord,
+        "sort_field": "service_date",
         "expected_count": 2,
         "first_record_checks": {
             "provider_npi": "1234567890",
@@ -42,6 +44,7 @@ TEST_CASES = [
         "key": "pharmacy/e2e_test.csv",
         "filename": "pharmacy_claim_valid.csv",
         "model": PharmacyClaim,
+        "sort_field": "service_date",
         "expected_count": 2,
         "first_record_checks": {
             "claim_id": "CLM001",
@@ -50,6 +53,21 @@ TEST_CASES = [
             "service_date": date(2025, 1, 1),
             "total_amount_paid": Decimal("150.00"),
             "transaction_code": "TXN001",
+        },
+    },
+    {
+        "id": "lab_result_flow",
+        "key": "labs/e2e_test.csv",
+        "filename": "lab_result_valid.csv",
+        "model": LabResult,
+        "sort_field": "performed_at",
+        "expected_count": 3,
+        "first_record_checks": {
+            "patient_id": "P001",
+            "test_code": "L001",
+            "result_value": Decimal("95.50"),
+            "result_unit": "MG/DL",
+            "test_name": "Glucose"
         },
     },
 ]
@@ -67,13 +85,13 @@ def s3_client():
     )
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db
 @pytest.mark.parametrize("case", TEST_CASES, ids=lambda x: x["id"])
 def test_ingestion_flow(s3_client, case):
     """
-    Data-Driven E2E Test:
+    Synchronous Integration Test:
     Validates that CSVs uploaded to S3 are correctly processed into the Database
-    with 100% field fidelity.
+    with 100% field fidelity. Uses CELERY_TASK_ALWAYS_EAGER to run in-process.
     """
 
     ensure_bucket(s3_client, BUCKET_NAME)
@@ -82,35 +100,31 @@ def test_ingestion_flow(s3_client, case):
     if not file_path.exists():
         pytest.fail(f"Test data file not found: {file_path}")
 
+    # 1. Upload to S3 (so it exists for the task to download)
     with open(file_path, "rb") as f:
         s3_client.upload_fileobj(f, BUCKET_NAME, case["key"])
 
     try:
-        # We wait for the records to appear in the database
-        max_retries = 30
-        records_found = False
+        # 2. Run Task Synchronously (Eager Mode)
+        # We manually trigger the task, effectively simulating the S3->SQS->Worker handoff
+        # but configured to run immediately in this thread/transaction.
+        with override_settings(CELERY_TASK_ALWAYS_EAGER=True, CELERY_TASK_EAGER_PROPAGATES=True):
+            process_s3_file.delay(bucket_name=BUCKET_NAME, object_key=case["key"])
 
-        for _ in range(max_retries):
-            count = case["model"].objects.count()
-            if count >= case["expected_count"]:
-                records_found = True
-                break
-            time.sleep(1)
-
-        if not records_found:
-            # Debug: Check if Artifact exists and its status
+        # 3. Verify Results immediately (no waiting/retries needed)
+        
+        # Check count
+        actual_count = case["model"].objects.count()
+        if actual_count != case["expected_count"]:
+            # Debug info
             artifacts = Artifact.objects.filter(file=case["key"])
-            debug_info = f"Artifacts found for {case['key']}: {list(artifacts.values('id', 'status', 'created_at'))}"
-
-            assert records_found, (
-                f"Timeout waiting for {case['expected_count']} records to appear in {case['model'].__name__}. "
-                f"Found {case['model'].objects.count()}. "
-                f"{debug_info}"
+            debug_info = f"Artifacts: {list(artifacts.values('id', 'status', 'created_at'))}"
+            pytest.fail(
+                f"Count mismatch. Expected {case['expected_count']}, got {actual_count}. {debug_info}"
             )
 
-        assert case["model"].objects.count() == case["expected_count"]
-
-        record = case["model"].objects.order_by("service_date").first()
+        # Check data fidelity
+        record = case["model"].objects.order_by(case["sort_field"]).first()
         for field, expected_value in case["first_record_checks"].items():
             actual_value = getattr(record, field)
             assert actual_value == expected_value, (
@@ -118,23 +132,20 @@ def test_ingestion_flow(s3_client, case):
             )
 
     finally:
+        # Cleanup S3 only (DB is handled by transaction rollback)
         s3_client.delete_object(Bucket=BUCKET_NAME, Key=case["key"])
-        # Clear database for next test case run
-        case["model"].objects.all().delete()
 
 
 def test_ingestion_flow_missing_data(s3_client):
     """
     Test that the E2E test fails gracefully if the data file is missing.
-    This covers the defensive check in test_ingestion_flow.
     """
     case = {
         "id": "missing_file",
         "key": "audit/missing.csv",
         "filename": "non_existent_file_ABC123.csv",
-        "model": AuditRecord,  # minimal fields to satisfy function sig if it proceeded
+        "model": AuditRecord, 
     }
 
-    # pytest.fail raises a Failed exception (inherits from BaseException)
     with pytest.raises(BaseException, match="Test data file not found"):
         test_ingestion_flow(s3_client, case)

@@ -1,6 +1,6 @@
 # Django AWS ETL
 
-A robust, event-driven ETL (Extract, Transform, Load) pipeline built with Django, Celery, and AWS services (simulated locally via LocalStack). This project demonstrates a scalable architecture for ingesting healthcare data (e.g., Pharmacy Claims, Audit Records) using S3 event notifications and SQS queues.
+A robust, event-driven ETL (Extract, Transform, Load) pipeline built with Django, Celery, and AWS services (simulated locally via LocalStack). This project demonstrates a scalable architecture for ingesting healthcare data (e.g., Pharmacy Claims, Audit Records, Lab Results) using S3 event notifications and SQS queues.
 
 ## 🏗 Architecture
 

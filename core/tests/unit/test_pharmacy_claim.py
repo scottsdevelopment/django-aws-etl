@@ -16,14 +16,14 @@ from core.schemas.pharmacy_claim import PharmacyClaimSchema
 def test_pharmacy_claim_str():
     """Test string representation of PharmacyClaim."""
     record = PharmacyClaim.objects.create(
-        claim_id="CLM001",
+        claim_id="CLM_UNIT_TEST",
         ncpdp_id="NCP001",
         bin_number="BIN001",
         service_date=date(2025, 1, 1),
         total_amount_paid=Decimal("150.00"),
         transaction_code="TXN01",
     )
-    assert str(record) == "Claim CLM001 (2025-01-01)"
+    assert str(record) == "Claim CLM_UNIT_TEST (2025-01-01)"
 
 
 def test_pharmacy_claim_valid():
