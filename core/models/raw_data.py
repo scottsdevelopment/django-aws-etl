@@ -1,6 +1,9 @@
+from typing import TYPE_CHECKING
+
 from django.db import models
 
-from core.models.artifact import Artifact
+if TYPE_CHECKING:
+    from core.models.artifact import Artifact
 
 
 class RawData(models.Model):
@@ -18,7 +21,7 @@ class RawData(models.Model):
         (FAILED, "Failed"),
     ]
 
-    artifact = models.ForeignKey(Artifact, on_delete=models.CASCADE, related_name="raw_rows")
+    artifact = models.ForeignKey("core.Artifact", on_delete=models.CASCADE, related_name="raw_rows")
     data = models.JSONField(help_text="The raw data row as a dictionary", null=True, blank=True)
     raw_content = models.TextField(null=True, blank=True, help_text="Fallback for malformed rows")
     row_index = models.IntegerField()
