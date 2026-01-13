@@ -105,7 +105,6 @@ def _flush_batch(strategy, instances, success_rows, failed_rows, update_fields):
     """
     # 1. Bulk Upsert Domain Models
     if instances:
-        # Build the base kwargs for bulk_create
         bulk_kwargs = {}
         
         # Add upsert logic only if we have the identity columns
