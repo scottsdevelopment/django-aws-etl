@@ -28,6 +28,28 @@ graph LR
 *   **Reliability**: Dead Letter Queues (DLQ) and robust error handling (implemented in Celery tasks).
 *   **Code Quality**: Enforced via `ruff` and `pytest`. Strict "No NOQA" policy; all linting errors must be resolved by refactoring (e.g., using constants, proper imports) rather than suppression.
 
+## 🏛 Architectural Decisions
+
+### 1. Ingestion Performance
+To ensure scalability when processing large files (10k+ rows), we avoid naive `objects.create()` calls inside loops.
+*   **Solution**: We use `bulk_create()` with batching (size: 1000).
+*   **Impact**: Reduces database round-trips from N to N/1000, significantly lowering overhead and connection pool contention.
+
+### 2. Idempotency
+The system is designed to handle task failures and restarts gracefully without duplicate data.
+*   **Solution**: We utilize Postgres-native upserts (`ON CONFLICT DO UPDATE`) during bulk ingestion.
+*   **Effect**: Restarting a crashed task simply updates existing records and inserts missing ones, ensuring eventual consistency without duplicates.
+
+### 3. Observability & Logging
+We deliberately avoid building a custom "Log Viewer" UI in the Django Admin.
+*   **Philosophy**: Logs belong in dedicated infrastructure tools (Datadog, CloudWatch, ELK), not the application database.
+*   **Implementation**: All validation errors (including row-level failures) are explicitly piped to standard output (`stdout/stderr`) via Python logging. This allows existing log aggregation agents to capture, rotate, and index logs efficiently without bloating the application DB or introducing scope creep.
+
+### 4. Artifact Metadata
+Instead of complex relational tracking for every single row status, we utilize computed properties on the `Artifact` model.
+*   **Row Reporting**: `success_count` and `failure_count` are dynamically calculated via the `RawData` relation.
+*   **Benefit**: Provides immediate insight into ingestion health without denormalizing data or complex synchronization logic.
+
 ## 🛠 Prerequisites
 
 *   **Docker Desktop**: Required to run the containerized stack.

@@ -1,13 +1,15 @@
 import logging
+from itertools import batched
 
 from pydantic import ValidationError as PydanticValidationError
 
 from core.models import Artifact, RawData
-from core.strategies.base import IngestionStrategy
 from core.strategies.factory import StrategyFactory
 
 logger = logging.getLogger(__name__)
 
+# Batch processing configuration
+BATCH_SIZE = 1000
 
 def process_artifact(artifact_id: int) -> tuple[int, int]:
     """
@@ -36,48 +38,86 @@ def process_artifact(artifact_id: int) -> tuple[int, int]:
     success_count = 0
     failure_count = 0
 
-    for raw_row in pending_rows.iterator():
-        if _process_single_raw_row(raw_row, strategy):
-            success_count += 1
-        else:
-            failure_count += 1
+    for batch in batched(pending_rows.iterator(), BATCH_SIZE):
+        instances, success_rows, failed_rows, update_fields = _prepare_batch(strategy, batch)
+        
+        s_count, f_count = _flush_batch(
+            strategy, 
+            instances, 
+            success_rows, 
+            failed_rows, 
+            update_fields
+        )
+        success_count += s_count
+        failure_count += f_count
 
     logger.info(f"Artifact {artifact.id} processed: {success_count} success, {failure_count} failures")
     return success_count, failure_count
 
-
-def _process_single_raw_row(raw_row: RawData, strategy: IngestionStrategy) -> bool:
+def _prepare_batch(strategy, batch):
     """
-    Processes a single RawData row.
+    Processes a batch of raw rows into model instances.
+    Returns: (instances, success_rows, failed_rows, update_fields)
     """
-    row_data = raw_row.data
+    instances = []
+    success_rows = []
+    failed_rows = []
+    update_fields = set()
 
-    try:
-        # 1. Validation Layer
+    for raw_row in batch:
         try:
-            schema_data = strategy.schema_class.model_validate(row_data)
-        except PydanticValidationError as e:
-            msg = f"Validation Failed: {e}"
+            # 1. Validation: Pydantic validates types and coerces raw strings into python objects
+            schema_data = strategy.schema_class.model_validate(raw_row.data)
+            
+            # 2. Transformation: Strategy converts Pydantic model to dict, handling domain logic (e.g. unit conversion)
+            django_data = strategy.transform(schema_data)
+            
+            instances.append(strategy.model_class(**django_data))
+            success_rows.append(raw_row)
+            
+            if not update_fields and strategy.unique_fields:
+                    update_fields = set(django_data.keys()) - set(strategy.unique_fields)
+            
+        except (PydanticValidationError, Exception) as e:
+            msg = f"Validation Failed: {e}" if isinstance(e, PydanticValidationError) else str(e)
+            
+            # Explicitly log error for observability (since bulk_update bypasses signals)
+            logger.error(
+                f"Row processing failed (Artifact: {strategy.model_class.__name__}): {msg}", 
+                extra={"data": raw_row.data}
+            )
+
             raw_row.status = RawData.FAILED
             raw_row.error_message = msg
-            raw_row.save()
-            return False
+            
+            failed_rows.append(raw_row)
+            
+    return instances, success_rows, failed_rows, update_fields
 
-        # 2. Transformation
-        django_data = strategy.transform(schema_data)
+def _flush_batch(strategy, instances, success_rows, failed_rows, update_fields):
+    """
+    Helper to execute bulk operations.
+    """
+    # 1. Bulk Upsert Domain Models
+    if instances:
+        if strategy.unique_fields:
+             strategy.model_class.objects.bulk_create(
+                 instances, 
+                 update_conflicts=True,
+                 unique_fields=strategy.unique_fields,
+                 update_fields=list(update_fields)
+             )
+        else:
+            strategy.model_class.objects.bulk_create(instances)
 
-        # 3. Idempotent Loading
-        lookup_kwargs = {k: django_data[k] for k in strategy.unique_fields}
-        defaults = {k: v for k, v in django_data.items() if k not in strategy.unique_fields}
+    # 2. Bulk Update RawData Status (Success)
+    if success_rows:
+        for row in success_rows:
+            row.status = RawData.PROCESSED
+        RawData.objects.bulk_update(success_rows, fields=["status"])
 
-        strategy.model_class.objects.update_or_create(defaults=defaults, **lookup_kwargs)
+    # 3. Bulk Update RawData Status (Failed)
+    if failed_rows:
+        RawData.objects.bulk_update(failed_rows, fields=["status", "error_message"])
 
-        raw_row.status = RawData.PROCESSED
-        raw_row.save()
-        return True
-
-    except Exception as e:
-        raw_row.status = RawData.FAILED
-        raw_row.error_message = str(e)
-        raw_row.save()
-        return False
+    return len(success_rows), len(failed_rows)

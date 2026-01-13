@@ -98,6 +98,7 @@ def test_process_artifact_runtime_exception():
 
     # Patch StrategyFactory inside processing_service
     mock_strategy = MagicMock()
+    mock_strategy.model_class.__name__ = "MockModel"
     mock_strategy.schema_class.model_validate.side_effect = Exception("Runtime Boom")
 
     with patch("core.services.processing_service.StrategyFactory") as mock_factory:
