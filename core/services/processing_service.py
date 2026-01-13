@@ -34,7 +34,7 @@ def process_artifact(artifact_id: int) -> tuple[int, int]:
 
     # Process pending rows
     pending_rows = RawData.objects.filter(artifact=artifact, status=RawData.PENDING)
-    
+
     success_count = 0
     failure_count = 0
 
@@ -53,7 +53,6 @@ def process_artifact(artifact_id: int) -> tuple[int, int]:
 
     logger.info(f"Artifact {artifact.id} processed: {success_count} success, {failure_count} failures")
     return success_count, failure_count
-
 
 def _prepare_batch(strategy, batch):
     """

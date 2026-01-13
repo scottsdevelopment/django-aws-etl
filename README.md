@@ -30,12 +30,12 @@ graph LR
 
 ## 🏛 Architectural Decisions
 
-### 1. Ingestion Performance (Avoiding N+1)
+### 1. Ingestion Performance
 To ensure scalability when processing large files (10k+ rows), we avoid naive `objects.create()` calls inside loops.
 *   **Solution**: We use `bulk_create()` with batching (size: 1000).
 *   **Impact**: Reduces database round-trips from N to N/1000, significantly lowering overhead and connection pool contention.
 
-### 2. Idempotency (Crash Recovery)
+### 2. Idempotency
 The system is designed to handle task failures and restarts gracefully without duplicate data.
 *   **Solution**: We utilize Postgres-native upserts (`ON CONFLICT DO UPDATE`) during bulk ingestion.
 *   **Effect**: Restarting a crashed task simply updates existing records and inserts missing ones, ensuring eventual consistency without duplicates.

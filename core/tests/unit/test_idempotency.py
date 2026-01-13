@@ -1,4 +1,3 @@
-
 import pytest
 
 from core.models import Artifact, PharmacyClaim, RawData
@@ -81,7 +80,6 @@ def test_repro_same_batch_duplicates():
 
     count = PharmacyClaim.objects.filter(claim_id="C_BATCH_1").count()
     print(f"Batch Test Count: {count}")
-
 
 @pytest.mark.django_db
 def test_idempotency_on_restart_simulate_crash():
