@@ -62,10 +62,6 @@ WSGI_APPLICATION = "config.wsgi.application"
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
 DATABASES = {"default": env.db("DATABASE_URL", default="postgres://postgres:postgres@localhost:5432/healthcare_etl")}
-DATABASES["default"]["TEST"] = {
-    "NAME": "healthcare_etl",
-    "MIRROR": "default",
-}
 
 
 # Password validation

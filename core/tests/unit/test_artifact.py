@@ -1,6 +1,6 @@
 import pytest
 
-from core.models import Artifact
+from core.models import Artifact, RawData
 
 
 @pytest.mark.django_db
@@ -10,7 +10,7 @@ def test_artifact_str():
 @pytest.mark.django_db
 def test_artifact_counts():
     """Test virtual properties for success/failure counts."""
-    from core.models import RawData
+    pass
     artifact = Artifact.objects.create(file="counts.csv", status="COMPLETED", content_type="test")
     
     # Create 2 success, 1 failed, 1 pending
@@ -19,5 +19,5 @@ def test_artifact_counts():
     RawData.objects.create(artifact=artifact, row_index=3, status=RawData.FAILED, error_message="oops")
     RawData.objects.create(artifact=artifact, row_index=4, status=RawData.PENDING, data={})
     
-    assert artifact.success_count == 2
-    assert artifact.failure_count == 1
+    assert artifact.success_count == 2  # noqa: PLR2004
+    assert artifact.failure_count == 1  # noqa: PLR2004

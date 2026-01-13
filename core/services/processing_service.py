@@ -4,7 +4,6 @@ from itertools import batched
 from pydantic import ValidationError as PydanticValidationError
 
 from core.models import Artifact, RawData
-from core.strategies.base import IngestionStrategy
 from core.strategies.factory import StrategyFactory
 
 logger = logging.getLogger(__name__)
@@ -84,7 +83,10 @@ def _prepare_batch(strategy, batch):
             msg = f"Validation Failed: {e}" if isinstance(e, PydanticValidationError) else str(e)
             
             # Explicitly log error for observability (since bulk_update bypasses signals)
-            logger.error(f"Row processing failed (Artifact: {strategy.model_class.__name__}): {msg}", extra={"data": raw_row.data})
+            logger.error(
+                f"Row processing failed (Artifact: {strategy.model_class.__name__}): {msg}", 
+                extra={"data": raw_row.data}
+            )
 
             raw_row.status = RawData.FAILED
             raw_row.error_message = msg

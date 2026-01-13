@@ -1,8 +1,9 @@
 
 import pytest
-from core.models import Artifact, RawData, PharmacyClaim
+
+from core.models import Artifact, PharmacyClaim, RawData
 from core.services.processing_service import process_artifact
-from decimal import Decimal
+
 
 @pytest.mark.django_db
 def test_repro_whitespace_duplication():
@@ -44,8 +45,10 @@ def test_repro_whitespace_duplication():
     
     process_artifact(artifact.id)
     
-    # If stripping is NOT implemented, we expect 2 records (which is the "bug" or "behavior" we want to prevent if we want natural key robustness)
-    # If the user considers "C_WS_1 " and "C_WS_1" to be the same claim, then we currently fail this check (we have 2 records).
+    # If stripping is NOT implemented, we expect 2 records (which is the "bug" or "behavior" 
+    # we want to prevent if we want natural key robustness)
+    # If the user considers "C_WS_1 " and "C_WS_1" to be the same claim, then we currently fail this check 
+    # (we have 2 records).
     count = PharmacyClaim.objects.count()
     print(f"\nWhitespace Test Count: {count}")
     # assert count == 1 # We expect this to fail currently
