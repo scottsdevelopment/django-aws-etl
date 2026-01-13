@@ -37,9 +37,10 @@ def process_artifact(artifact_id: int) -> tuple[int, int]:
 
     success_count = 0
     failure_count = 0
+    update_fields = None
 
     for batch in batched(pending_rows.iterator(), BATCH_SIZE):
-        instances, success_rows, failed_rows, update_fields = _prepare_batch(strategy, batch)
+        instances, success_rows, failed_rows, update_fields = _prepare_batch(strategy, batch, update_fields)
         
         s_count, f_count = _flush_batch(
             strategy, 
@@ -54,7 +55,8 @@ def process_artifact(artifact_id: int) -> tuple[int, int]:
     logger.info(f"Artifact {artifact.id} processed: {success_count} success, {failure_count} failures")
     return success_count, failure_count
 
-def _prepare_batch(strategy, batch):
+
+def _prepare_batch(strategy, batch, update_fields=None):
     """
     Processes a batch of raw rows into model instances.
     Returns: (instances, success_rows, failed_rows, update_fields)
@@ -62,7 +64,8 @@ def _prepare_batch(strategy, batch):
     instances = []
     success_rows = []
     failed_rows = []
-    update_fields = set()
+    # Use valid_fields to strictly track what we found in this batch if we didn't have them before
+    current_update_fields = update_fields
 
     for raw_row in batch:
         try:
@@ -75,8 +78,9 @@ def _prepare_batch(strategy, batch):
             instances.append(strategy.model_class(**django_data))
             success_rows.append(raw_row)
             
-            if not update_fields and strategy.unique_fields:
-                    update_fields = set(django_data.keys()) - set(strategy.unique_fields)
+            # Calculate update_fields only if we don't have them yet and we have unique_fields to respect
+            if current_update_fields is None and strategy.unique_fields:
+                    current_update_fields = set(django_data.keys()) - set(strategy.unique_fields)
             
         except (PydanticValidationError, Exception) as e:
             msg = f"Validation Failed: {e}" if isinstance(e, PydanticValidationError) else str(e)
@@ -92,7 +96,8 @@ def _prepare_batch(strategy, batch):
             
             failed_rows.append(raw_row)
             
-    return instances, success_rows, failed_rows, update_fields
+    return instances, success_rows, failed_rows, current_update_fields
+
 
 def _flush_batch(strategy, instances, success_rows, failed_rows, update_fields):
     """
@@ -100,7 +105,7 @@ def _flush_batch(strategy, instances, success_rows, failed_rows, update_fields):
     """
     # 1. Bulk Upsert Domain Models
     if instances:
-        if strategy.unique_fields:
+        if strategy.unique_fields and update_fields:
              strategy.model_class.objects.bulk_create(
                  instances, 
                  update_conflicts=True,
