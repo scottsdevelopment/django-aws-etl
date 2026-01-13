@@ -105,15 +105,17 @@ def _flush_batch(strategy, instances, success_rows, failed_rows, update_fields):
     """
     # 1. Bulk Upsert Domain Models
     if instances:
+        bulk_kwargs = {}
+        
+        # Add upsert logic only if we have the identity columns
         if strategy.unique_fields:
-             strategy.model_class.objects.bulk_create(
-                 instances, 
-                 update_conflicts=True,
-                 unique_fields=strategy.unique_fields,
-                 update_fields=update_fields
-             )
-        else:
-            strategy.model_class.objects.bulk_create(instances)
+            bulk_kwargs.update({
+                "update_conflicts": True,
+                "unique_fields": strategy.unique_fields,
+                "update_fields": update_fields,
+            })
+
+        strategy.model_class.objects.bulk_create(instances, **bulk_kwargs)
 
     # 2. Bulk Update RawData Status (Success)
     if success_rows:
